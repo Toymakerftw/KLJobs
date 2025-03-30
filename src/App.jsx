@@ -16,44 +16,44 @@ const KLJobs = () => {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const perPage = 12;
 
-// Initialize particles
-useEffect(() => {
-  const initialShapes = Array.from({ length: 100 }, (_, i) => ({
-    id: i,
-    x: Math.random() * window.innerWidth,
-    y: Math.random() * window.innerHeight,
-    dx: (Math.random() - 0.5) * 2,
-    dy: (Math.random() - 0.5) * 2,
-    size: Math.random() * 10 + 5, // Initial size
-    color: `hsl(${Math.random() * 360}, 70%, 80%)`,
-  }));
-  setShapes(initialShapes);
+  // Initialize particles
+  useEffect(() => {
+    const initialShapes = Array.from({ length: 100 }, (_, i) => ({
+      id: i,
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      dx: (Math.random() - 0.5) * 2,
+      dy: (Math.random() - 0.5) * 2,
+      size: Math.random() * 10 + 5, // Initial size
+      color: `hsl(${Math.random() * 360}, 70%, 80%)`,
+    }));
+    setShapes(initialShapes);
 
-  const interval = setInterval(() => {
-    setShapes((prevShapes) =>
-      prevShapes.map((shape) => {
-        let newX = shape.x + shape.dx;
-        let newY = shape.y + shape.dy;
+    const interval = setInterval(() => {
+      setShapes((prevShapes) =>
+        prevShapes.map((shape) => {
+          let newX = shape.x + shape.dx;
+          let newY = shape.y + shape.dy;
 
-        if (newX < 0 || newX > window.innerWidth) shape.dx *= -1;
-        if (newY < 0 || newY > window.innerHeight) shape.dy *= -1;
+          if (newX < 0 || newX > window.innerWidth) shape.dx *= -1;
+          if (newY < 0 || newY > window.innerHeight) shape.dy *= -1;
 
-        // Randomize size change (optional, adds more dynamic look)
-        const sizeChange = (Math.random() - 0.5) * 0.5; // Small random change
-        const newSize = Math.max(5, Math.min(15, shape.size + sizeChange)); // Keep size within bounds
+          // Randomize size change (optional, adds more dynamic look)
+          const sizeChange = (Math.random() - 0.5) * 0.5; // Small random change
+          const newSize = Math.max(5, Math.min(15, shape.size + sizeChange)); // Keep size within bounds
 
-        return {
-          ...shape,
-          x: Math.max(0, Math.min(window.innerWidth, newX)),
-          y: Math.max(0, Math.min(window.innerHeight, newY)),
-          size: newSize, // Update size
-        };
-      })
-    );
-  }, 16);
+          return {
+            ...shape,
+            x: Math.max(0, Math.min(window.innerWidth, newX)),
+            y: Math.max(0, Math.min(window.innerHeight, newY)),
+            size: newSize, // Update size
+          };
+        })
+      );
+    }, 16);
 
-  return () => clearInterval(interval);
-}, []);
+    return () => clearInterval(interval);
+  }, []);
 
   // Debounce search query updates
   useEffect(() => {
@@ -94,7 +94,7 @@ useEffect(() => {
 
       if (error) throw error;
 
-      setJobs((prev) => 
+      setJobs((prev) =>
         currentPage === 1 ? data || [] : [...prev, ...(data || [])]
       );
       setHasMore((data || []).length === perPage);
@@ -285,6 +285,32 @@ useEffect(() => {
           )}
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-100 border-t border-gray-200 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+          <div className="text-gray-600 text-sm">
+            © {new Date().getFullYear()} KL Jobs. All rights reserved.
+          </div>
+          <ul className="flex space-x-6">
+            <li>
+              <a href="#" className="text-gray-600 hover:text-gray-800 text-sm">
+                Privacy Policy
+              </a>
+            </li>
+            <li>
+              <a href="#" className="text-gray-600 hover:text-gray-800 text-sm">
+                Terms of Service
+              </a>
+            </li>
+            <li>
+              <a href="#" className="text-gray-600 hover:text-gray-800 text-sm">
+                Contact Us
+              </a>
+            </li>
+          </ul>
+        </div>
+      </footer>
     </div>
   );
 };
