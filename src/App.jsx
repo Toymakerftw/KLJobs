@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { supabase } from "./supabaseClient";
 import debounce from "lodash.debounce";
+import JobListingSection from './components/JobListing';
 
 const SearchBar = ({ onSearch }) => {
   const [searchForm, setSearchForm] = useState({
@@ -341,115 +342,12 @@ const KLJobs = () => {
         </div>
       </section>
 
-      <section className="px-6 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {jobs.length > 0 ? (
-              jobs.map((job, index) => (
-                <div
-                  key={job.id}
-                  className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-                  style={{
-                    animationDelay: `${index * 0.1}s`,
-                    animation: "fadeIn 0.5s ease-out forwards",
-                    opacity: 0,
-                  }}
-                >
-                  <div className="p-6">
-                    <div className="flex items-start">
-                      <div className="flex-grow">
-                        <h2 className="text-xl font-semibold text-gray-900 line-clamp-2">
-                          {job.role}
-                        </h2>
-                        <p className="mt-2 text-gray-600 font-medium">
-                          {job.company}
-                        </p>
-                        <p className="mt-1 text-sm text-gray-500 flex items-center">
-                          <svg
-                            className="w-4 h-4 mr-1 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                          </svg>
-                          {job.tech_park}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-6">
-                      <a
-                        href={job.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full inline-block bg-blue-600 text-white py-2.5 px-4 rounded-lg text-center hover:bg-blue-700 transition-all duration-300 shadow-sm hover:shadow"
-                      >
-                        Apply Now
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <>
-                {isLoading ? (
-                  Array.from({ length: 6 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 animate-pulse"
-                    >
-                      <div className="p-6">
-                        <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
-                        <div className="h-4 bg-gray-200 rounded w-2/3 mb-2"></div>
-                        <div className="h-4 bg-gray-200 rounded w-1/2 mb-6"></div>
-                        <div className="h-10 bg-gray-200 rounded-lg w-full"></div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-center text-gray-500 mt-8 col-span-full">
-                    No jobs found matching your search criteria.
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-
-          {hasMore && (
-            <div className="text-center my-8">
-              <button
-                onClick={loadMoreJobs}
-                disabled={isLoading}
-                className="bg-blue-600 text-white py-2.5 px-6 rounded-lg text-center hover:bg-blue-700 transition-all duration-300 shadow-sm hover:shadow-md disabled:opacity-50"
-              >
-                {isLoading ? (
-                  <div className="inline-block animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                ) : (
-                  "Load More"
-                )}
-              </button>
-            </div>
-          )}
-
-          {!hasMore && !isLoading && jobs.length > 0 && (
-            <p className="text-center text-gray-500 mt-8 py-4 border-t border-gray-100">
-              You've reached the end of available jobs
-            </p>
-          )}
-        </div>
-      </section>
+      <JobListingSection
+        jobs={jobs}
+        isLoading={isLoading}
+        hasMore={hasMore}
+        loadMoreJobs={loadMoreJobs}
+      />
 
       <footer className="bg-white border-t border-gray-200 py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
