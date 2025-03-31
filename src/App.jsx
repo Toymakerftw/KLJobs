@@ -108,8 +108,9 @@ const SearchBar = ({ onSearch }) => {
               <button
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="sm:w-auto py-4 px-6 border border-blue-600 text-blue-600 rounded-xl font-medium transition-all duration-300 hover:bg-blue-50 flex items-center justify-center"
+                className="sm:w-auto py-4 px-6 border border-blue-600 text-blue-600 rounded-xl font-medium transition-all duration-300 hover:bg-blue-50 flex items-center justify-center relative"
               >
+                <div className="absolute inset-0"></div>
                 {isExpanded ? (
                   <>
                     <ChevronUp className="w-6 h-6 mr-2" />
