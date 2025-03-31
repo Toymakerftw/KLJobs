@@ -1,82 +1,161 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Briefcase, Search, Menu, ArrowUp } from "lucide-react";
+import {
+  Briefcase,
+  Search,
+  Menu,
+  ArrowUp,
+  ChevronDown,
+  Building,
+  MapPin,
+  ChevronUp,
+} from "lucide-react";
 import { supabase } from "./supabaseClient";
 import debounce from "lodash.debounce";
 
+const SearchBar = ({ onSearch }) => {
+  const [searchForm, setSearchForm] = useState({
+    role: "",
+    company: "",
+    location: "",
+  });
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setSearchForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSearch(searchForm);
+  };
+
+  const handleReset = () => {
+    setSearchForm({
+      role: "",
+      company: "",
+      location: "",
+    });
+    onSearch({ role: "", company: "", location: "" });
+  };
+
+  return (
+    <div className="mt-10 w-full max-w-3xl mx-auto transform transition-all animate-slideUp">
+      <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          Find Your Next Opportunity
+        </h2>
+
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            {/* Main search input */}
+            <div className="relative transition-all duration-300">
+              <Search className="absolute left-4 top-3.5 transition-colors text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search for jobs, companies, or tech parks..."
+                name="role"
+                value={searchForm.role}
+                onChange={handleInputChange}
+                onFocus={() => setIsExpanded(true)}
+                onBlur={() => setIsExpanded(false)}
+                className="block w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-gray-50 focus:bg-white"
+              />
+            </div>
+
+            {/* Advanced search fields - conditionally rendered */}
+            <div className={`space-y-4 transition-all duration-500 ease-in-out ${isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
+              {/* Company search input */}
+              <div className="relative transition-all duration-300">
+                <Building className="absolute left-4 top-3.5 transition-colors text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Filter by company..."
+                  name="company"
+                  value={searchForm.company}
+                  onChange={handleInputChange}
+                  className="block w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-gray-50 focus:bg-white"
+                />
+              </div>
+
+              {/* Location search input */}
+              <div className="relative transition-all duration-300">
+                <MapPin className="absolute left-4 top-3.5 transition-colors text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Filter by location..."
+                  name="location"
+                  value={searchForm.location}
+                  onChange={handleInputChange}
+                  className="block w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-gray-50 focus:bg-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="submit"
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-medium transition-all duration-300 shadow-sm hover:shadow flex items-center justify-center"
+              >
+                <Search className="w-5 h-5 mr-2" />
+                Find Jobs
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="sm:w-auto py-4 px-6 border border-blue-600 text-blue-600 rounded-xl font-medium transition-all duration-300 hover:bg-blue-50 flex items-center justify-center"
+              >
+                {isExpanded ? (
+                  <>
+                    <ChevronUp className="w-6 h-6 mr-2" />
+                    <span>Less Filters</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-6 h-6 mr-2" />
+                    <span>More Filters</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <div className="mt-5 pt-5 border-t border-gray-100 flex justify-between items-center text-sm text-gray-500">
+          <p>Popular: React, Python, UI/UX</p>
+          <span
+            onClick={handleReset}
+            className="text-blue-600 cursor-pointer hover:underline"
+          >
+            Clear All
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const KLJobs = () => {
-  const scrollRef = useRef(0);
-  const requestRef = useRef();
-  const previousTimeRef = useRef();
-
-  const [shapes, setShapes] = useState([]);
-  const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
-  const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
-  const shapesRef = useRef([]);
-
   const [jobs, setJobs] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [searchForm, setSearchForm] = useState({
+    role: "",
+    company: "",
+    location: "",
+  });
+  const [debouncedSearchForm, setDebouncedSearchForm] = useState({
+    role: "",
+    company: "",
+    location: "",
+  });
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const perPage = 12;
-
-  useEffect(() => {
-    const handleResize = () => {
-      setViewportHeight(window.innerHeight);
-      setViewportWidth(window.innerWidth);
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  useEffect(() => {
-    // Softer, more harmonious colors with lower opacity
-    const colors = [
-      "rgba(59, 130, 246, 0.3)",  // blue
-      "rgba(99, 102, 241, 0.2)",  // indigo
-      "rgba(139, 92, 246, 0.2)",  // purple
-      "rgba(236, 72, 153, 0.15)", // pink
-      "rgba(248, 113, 113, 0.2)", // red
-    ];
-
-    // Reduce number of particles and make them more subtle
-    const initialShapes = Array.from({ length: 50 }, (_, i) => ({
-      id: i,
-      x: Math.random() * viewportWidth,
-      y: Math.random() * viewportHeight * 2,
-      // Slower movement for less jarring effect
-      dx: (Math.random() - 0.5) * 0.8,
-      dy: (Math.random() - 0.5) * 0.8,
-      // Larger, softer particles
-      size: Math.random() * 15 + 10,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      opacity: 0.9 + Math.random() * 0.2, // Lower opacity range
-      blur: 1 + Math.random() * 5, // More blur for softer look
-      speed: 0.2 + Math.random() * 0.5, // Slower speed
-    }));
-
-    setShapes(initialShapes);
-    shapesRef.current = initialShapes;
-  }, [viewportWidth, viewportHeight]);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      document.documentElement.style.scrollBehavior = "smooth";
-
-      const handleScroll = () => {
-        scrollRef.current = window.scrollY;
-      };
-
-      window.addEventListener("scroll", handleScroll, { passive: true });
-      return () => {
-        window.removeEventListener("scroll", handleScroll);
-        document.documentElement.style.scrollBehavior = "";
-      };
-    }
-  }, []);
+  const perPage = 9;
 
   useEffect(() => {
     const toggleVisibility = () => {
@@ -91,114 +170,70 @@ const KLJobs = () => {
     return () => window.removeEventListener("scroll", toggleVisibility);
   }, []);
 
-  const animateParticles = useCallback(
-    (timestamp) => {
-      if (previousTimeRef.current === undefined) {
-        previousTimeRef.current = timestamp;
-      }
-
-      const deltaTime = timestamp - previousTimeRef.current;
-      previousTimeRef.current = timestamp;
-
-      const cappedDeltaTime = Math.min(deltaTime, 100);
-
-      setShapes((prevShapes) => {
-        const updatedShapes = shapesRef.current.map((shape) => {
-          const timeScale = cappedDeltaTime / 16;
-
-          // Apply smoother, dampened movement
-          let newX = shape.x + shape.dx * shape.speed * timeScale * 0.7;
-          let newY = shape.y + shape.dy * shape.speed * timeScale * 0.7;
-
-          // Smoother boundary behavior
-          if (newX < -50 || newX > viewportWidth + 50) {
-            shape.dx *= -1;
-            newX = Math.max(-50, Math.min(newX, viewportWidth + 50));
-          }
-
-          const totalHeight = Math.max(document.body.scrollHeight, viewportHeight * 2);
-
-          // Gentler repositioning when particles go out of bounds
-          if (newY < -50 || newY > totalHeight + 50) {
-            // Instead of random repositioning, bounce with dampening
-            shape.dy *= -0.8;
-            newY = newY < -50 ? -50 : totalHeight + 50;
-          }
-
-          return {
-            ...shape,
-            x: newX,
-            y: newY,
-          };
-        });
-
-        shapesRef.current = updatedShapes;
-        return updatedShapes;
-      });
-
-      requestRef.current = requestAnimationFrame(animateParticles);
-    },
-    [viewportWidth, viewportHeight]
-  );
-
-  useEffect(() => {
-    requestRef.current = requestAnimationFrame(animateParticles);
-    return () => {
-      if (requestRef.current) {
-        cancelAnimationFrame(requestRef.current);
-      }
-    };
-  }, [animateParticles]);
-
   useEffect(() => {
     const handler = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
+      setDebouncedSearchForm(searchForm);
     }, 300);
 
     return () => {
       clearTimeout(handler);
     };
-  }, [searchQuery]);
+  }, [searchForm]);
 
   useEffect(() => {
     setPage(1);
     setJobs([]);
     setHasMore(true);
-  }, [debouncedSearchQuery]);
+  }, [debouncedSearchForm]);
 
-  const fetchJobs = useCallback(async (currentPage, currentSearchQuery) => {
-    setIsLoading(true);
-    try {
-      const from = (currentPage - 1) * perPage;
-      const to = currentPage * perPage - 1;
+  const fetchJobs = useCallback(
+    async (currentPage, currentSearchForm) => {
+      setIsLoading(true);
+      try {
+        const from = (currentPage - 1) * perPage;
+        const to = currentPage * perPage - 1;
 
-      let queryBuilder = supabase.from("jobs").select("*");
+        let queryBuilder = supabase.from("jobs").select("*");
 
-      if (currentSearchQuery.trim()) {
-        queryBuilder = queryBuilder.or(
-          `role.ilike.%${currentSearchQuery}%,company.ilike.%${currentSearchQuery}%,tech_park.ilike.%${currentSearchQuery}%`
+        if (currentSearchForm.role.trim()) {
+          queryBuilder = queryBuilder.or(
+            `role.ilike.%${currentSearchForm.role}%,company.ilike.%${currentSearchForm.role}%,tech_park.ilike.%${currentSearchForm.role}%`
+          );
+        }
+
+        if (currentSearchForm.company.trim()) {
+          queryBuilder = queryBuilder.or(
+            `company.ilike.%${currentSearchForm.company}%`
+          );
+        }
+
+        if (currentSearchForm.location.trim()) {
+          queryBuilder = queryBuilder.or(
+            `tech_park.ilike.%${currentSearchForm.location}%,company_profile.ilike.%${currentSearchForm.location}%`
+          );
+        }
+
+        const { data, error } = await queryBuilder.range(from, to);
+
+        if (error) throw error;
+
+        setJobs((prev) =>
+          currentPage === 1 ? data || [] : [...prev, ...(data || [])]
         );
+        setHasMore((data || []).length === perPage);
+        setPage(currentPage + 1);
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+      } finally {
+        setIsLoading(false);
       }
-
-      const { data, error } = await queryBuilder.range(from, to);
-
-      if (error) throw error;
-
-      setJobs((prev) =>
-        currentPage === 1 ? data || [] : [...prev, ...(data || [])]
-      );
-      setHasMore((data || []).length === perPage);
-      setPage(currentPage + 1);
-    } catch (error) {
-      console.error("Error fetching jobs:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
-    fetchJobs(1, debouncedSearchQuery);
-  }, [debouncedSearchQuery, fetchJobs]);
+    fetchJobs(1, debouncedSearchForm);
+  }, [debouncedSearchForm, fetchJobs]);
 
   useEffect(() => {
     const handleAnchorClick = (e) => {
@@ -221,10 +256,6 @@ const KLJobs = () => {
     return () => document.removeEventListener("click", handleAnchorClick);
   }, []);
 
-  const handleSearch = (e) => {
-    setSearchQuery(e.target.value);
-  };
-
   const scrollToTop = useCallback(() => {
     window.scrollTo({
       top: 0,
@@ -234,42 +265,12 @@ const KLJobs = () => {
 
   const loadMoreJobs = () => {
     if (!isLoading && hasMore) {
-      fetchJobs(page, debouncedSearchQuery);
+      fetchJobs(page, debouncedSearchForm);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 text-gray-900 relative overflow-hidden">
-      {/* Background particles with improved aesthetics */}
-      <div className="fixed top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        {shapes.map((shape) => {
-          const offsetY = scrollRef.current;
-          const parallaxFactor = 0.05 + Math.random() * 0.1; // More subtle parallax
-          const visualY = shape.y - offsetY * parallaxFactor;
-
-          return (
-            <div
-              key={shape.id}
-              style={{
-                position: "absolute",
-                left: `${shape.x}px`,
-                top: `${visualY}px`,
-                width: `${shape.size}px`,
-                height: `${shape.size}px`,
-                backgroundColor: shape.color,
-                borderRadius: "50%",
-                opacity: shape.opacity,
-                filter: `blur(${shape.blur}px)`,
-                transform: `translate3d(0, 0, 0)`,
-                transition: "top 0.3s ease-out", // Smoother transitions
-                willChange: "top, left",
-              }}
-            ></div>
-          );
-        })}
-      </div>
-
-      {/* Navbar */}
+    <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 text-gray-900">
       <nav className="bg-white/95 backdrop-blur-md border-b border-gray-200 fixed top-0 left-0 w-full z-20 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
@@ -321,8 +322,7 @@ const KLJobs = () => {
         </div>
       </nav>
 
-      {/* Hero section */}
-      <section className="bg-transparent pt-28 pb-16 relative z-10">
+      <section className="bg-transparent pt-28 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="animate-fadeIn">
             <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl md:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
@@ -334,21 +334,12 @@ const KLJobs = () => {
               your career to the next level 🚀
             </p>
           </div>
-          <div className="mt-10 relative max-w-md mx-auto transform transition-all animate-slideUp">
-            <Search className="absolute left-4 top-3.5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search for jobs, companies, or tech parks..."
-              value={searchQuery}
-              onChange={handleSearch}
-              className="block w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 sm:text-sm"
-            />
-          </div>
+
+          <SearchBar onSearch={setSearchForm} />
         </div>
       </section>
 
-      {/* Job listings */}
-      <section className="px-6 pb-16 relative z-10">
+      <section className="px-6 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {jobs.length > 0 ? (
@@ -458,8 +449,7 @@ const KLJobs = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-10 relative z-10 mt-auto">
+      <footer className="bg-white border-t border-gray-200 py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="md:flex md:justify-between">
             <div className="mb-8 md:mb-0">
@@ -579,7 +569,10 @@ const KLJobs = () => {
               © {new Date().getFullYear()} KL Jobs. All rights reserved.
             </div>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+              <a
+                href="#"
+                className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+              >
                 <span className="sr-only">Facebook</span>
                 <svg
                   className="h-6 w-6"
@@ -594,7 +587,10 @@ const KLJobs = () => {
                   />
                 </svg>
               </a>
-              <a href="#" className="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+              <a
+                href="#"
+                className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+              >
                 <span className="sr-only">Twitter</span>
                 <svg
                   className="h-6 w-6"
@@ -605,7 +601,10 @@ const KLJobs = () => {
                   <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
                 </svg>
               </a>
-              <a href="#" className="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+              <a
+                href="#"
+                className="text-gray-400 hover:text-gray-800 transition-colors duration-200"
+              >
                 <span className="sr-only">LinkedIn</span>
                 <svg
                   className="h-6 w-6"
@@ -625,7 +624,6 @@ const KLJobs = () => {
         </div>
       </footer>
 
-      {/* Back to top button */}
       <button
         onClick={scrollToTop}
         className={`fixed bottom-6 right-6 p-3 bg-blue-600 text-white rounded-full shadow-lg transition-all duration-300 hover:bg-blue-700 z-50 ${
