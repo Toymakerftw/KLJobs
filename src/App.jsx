@@ -170,15 +170,17 @@ const KLJobs = () => {
     return () => window.removeEventListener("scroll", toggleVisibility);
   }, []);
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchForm(searchForm);
-    }, 300);
+  // Debounce the search form updates
+  const debouncedSetSearchForm = useCallback(
+    debounce((form) => {
+      setDebouncedSearchForm(form);
+    }, 300),
+    []
+  );
 
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchForm]);
+  useEffect(() => {
+    debouncedSetSearchForm(searchForm);
+  }, [searchForm, debouncedSetSearchForm]);
 
   useEffect(() => {
     setPage(1);
