@@ -12,6 +12,7 @@ import {
 import { supabase } from "./supabaseClient";
 import debounce from "lodash.debounce";
 import JobListingSection from './components/JobListing';
+import { Analytics } from "@vercel/analytics/react"
 
 const SearchBar = ({ onSearch }) => {
   const [searchForm, setSearchForm] = useState({
@@ -275,6 +276,7 @@ const KLJobs = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 text-gray-900">
+    <Analytics />
       <nav className="bg-white/95 backdrop-blur-md border-b border-gray-200 fixed top-0 left-0 w-full z-20 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
