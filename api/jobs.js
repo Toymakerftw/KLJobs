@@ -1,5 +1,6 @@
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
+import { createClient } from 'redis';
 
 dotenv.config();
 
@@ -22,6 +23,8 @@ if (!pool) {
   });
 }
 
+let redisClient;
+
 export default async function handler(req, res) {
   // Set CORS headers to allow requests from any origin (or configure specific domains)
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -41,13 +44,82 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const page = parseInt(req.query.page) || 1;
+  const limit = 9; // Match frontend perPage
+  const offset = (page - 1) * limit;
+
+  const { role, company, location } = req.query;
+
+  // ---------------------------------------------------------
+  // 1. Try fetching from Redis first
+  // ---------------------------------------------------------
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = 9; // Match frontend perPage
-    const offset = (page - 1) * limit;
+    if (!redisClient) {
+      const url = process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
+      redisClient = createClient({
+        url,
+        password: process.env.REDIS_PASSWORD || undefined
+      });
+      redisClient.on('error', (err) => console.error('Redis Client Error', err));
+      await redisClient.connect();
+    }
 
-    const { role, company, location } = req.query;
+    if (redisClient.isOpen) {
+      const cachedData = await redisClient.get('jobs_data');
+      if (cachedData) {
+        let jobs = JSON.parse(cachedData);
 
+        // --- In-Memory Filtering ---
+        if (role && role.trim()) {
+          const term = role.trim().toLowerCase();
+          jobs = jobs.filter(j =>
+            (j.role && j.role.toLowerCase().includes(term)) ||
+            (j.company && j.company.toLowerCase().includes(term)) ||
+            (j.tech_park && j.tech_park.toLowerCase().includes(term))
+          );
+        }
+
+        if (company && company.trim()) {
+          const term = company.trim().toLowerCase();
+          jobs = jobs.filter(j => j.company && j.company.toLowerCase().includes(term));
+        }
+
+        if (location && location.trim()) {
+          const term = location.trim().toLowerCase();
+          jobs = jobs.filter(j =>
+            (j.tech_park && j.tech_park.toLowerCase().includes(term)) ||
+            (j.company_profile && j.company_profile.toLowerCase().includes(term))
+          );
+        }
+
+        // --- Pagination ---
+        const paginatedJobs = jobs.slice(offset, offset + limit);
+
+        // --- Mapping to Frontend Expected Format ---
+        // The Python script stores a normalized object in Redis, but we ensure strict compatibility here.
+        const processedRows = paginatedJobs.map(j => ({
+          ...j,
+          // 'role' is already cleaned in Redis if applicable
+          description: j.clean_description || j.original_description || j.description,
+          // 'email' is at root
+          company_profile: j.summary || j.company_profile, // Use summary for profile if available, matching MySQL logic
+          skills: j.skills || [],
+          experience: j.experience || null,
+          address: j.clean_address || null
+        }));
+
+        return res.status(200).json(processedRows);
+      }
+    }
+  } catch (err) {
+    console.warn("Redis fetch failed, falling back to DB:", err.message);
+    // Proceed to MySQL fallback
+  }
+
+  // ---------------------------------------------------------
+  // 2. Fallback to MySQL
+  // ---------------------------------------------------------
+  try {
     let query = 'SELECT * FROM jobs';
     let whereClauses = [];
     let params = [];
