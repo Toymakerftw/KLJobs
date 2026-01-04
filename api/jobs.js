@@ -101,10 +101,11 @@ export default async function handler(req, res) {
           ...j,
           // 'role' is already cleaned in Redis if applicable
           description: j.clean_description || j.original_description || j.description,
-          // 'email' is at root
-          company_profile: j.summary || j.company_profile, // Use summary for profile if available, matching MySQL logic
+          // 'email' is at root, but prefer clean_email if available
+          email: j.clean_email || j.email,
+          company_profile: j.job_summary || j.summary || j.company_profile, // Use summary for profile if available, matching MySQL logic
           skills: j.skills || [],
-          experience: j.experience || null,
+          experience: j.experience_required || j.experience || null,
           address: j.clean_address || null
         }));
 
