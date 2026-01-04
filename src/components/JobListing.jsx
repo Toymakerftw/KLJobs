@@ -96,11 +96,33 @@ const JobCard = ({ job }) => {
                       <Clock className="w-4 h-4 mr-1.5" />
                       <span className="text-sm font-medium">Deadline: {job.deadline}</span>
                     </div>
+                    {job.experience && (
+                      <div className="flex items-center px-3 py-1.5 bg-purple-50 text-purple-600 rounded-full">
+                        <Briefcase className="w-4 h-4 mr-1.5" />
+                        <span className="text-sm font-medium">{job.experience}</span>
+                      </div>
+                    )}
                   </div>
+
+                  {job.skills && job.skills.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Required Skills</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {job.skills.map((skill, index) => (
+                          <span 
+                            key={index} 
+                            className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium border border-gray-200"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">Job Description</h3>
-                    <div className="text-gray-600 whitespace-pre-line text-sm">
+                    <div className="text-gray-600 whitespace-pre-line text-sm leading-relaxed">
                       {job.description || "No detailed description available."}
                     </div>
                   </div>
@@ -119,11 +141,23 @@ const JobCard = ({ job }) => {
                 </div>
                 
                 {/* Right column - Company info */}
-                <div className="md:w-1/3 bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Company Information</h3>
-                  <div className="text-sm text-gray-600 whitespace-pre-line">
-                    {job.company_profile || "No company information available."}
+                <div className="md:w-1/3 space-y-6">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Company Information</h3>
+                    <div className="text-sm text-gray-600 whitespace-pre-line">
+                      {job.company_profile || "No company information available."}
+                    </div>
                   </div>
+
+                  {(job.address || job.tech_park) && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Location</h3>
+                      <div className="flex items-start text-sm text-gray-600">
+                        <MapPin className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0 text-gray-400" />
+                        <span className="whitespace-pre-line">{job.address || job.tech_park}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -153,7 +187,7 @@ const JobListingSection = ({ jobs, isLoading, hasMore, loadMoreJobs }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {jobs.length > 0 ? (
-            jobs.map((job, index) => (
+            jobs.map((job) => (
               <JobCard key={job.id} job={job} />
             ))
           ) : (

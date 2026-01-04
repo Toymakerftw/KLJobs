@@ -86,7 +86,36 @@ export default async function handler(req, res) {
 
     const [rows] = await pool.query(query, params);
 
-    res.status(200).json(rows);
+    const processedRows = rows.map(row => {
+      let cleaned = row.cleaned_data;
+      
+      // Ensure cleaned is an object if it's not null/undefined
+      if (cleaned && typeof cleaned === 'string') {
+        try {
+          cleaned = JSON.parse(cleaned);
+        } catch (e) {
+          console.error("Failed to parse cleaned_data for job id:", row.id, e);
+          cleaned = null;
+        }
+      }
+
+      if (cleaned) {
+        return {
+          ...row,
+          role: cleaned.job_title || row.role,
+          description: cleaned.clean_description || row.description,
+          email: cleaned.clean_email || row.email, // Prioritize clean email
+          company_profile: cleaned.job_summary || row.company_profile,
+          skills: cleaned.skills || [], // New field
+          experience: cleaned.experience_required || null, // New field
+          // We keep original tech_park for the badge, but add address if available
+          address: cleaned.clean_address || null 
+        };
+      }
+      return row;
+    });
+
+    res.status(200).json(processedRows);
   } catch (error) {
     console.error('Database error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
