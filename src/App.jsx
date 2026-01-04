@@ -9,7 +9,6 @@ import {
   MapPin,
   ChevronUp,
 } from "lucide-react";
-import { supabase } from "./supabaseClient";
 import debounce from "lodash.debounce";
 import JobListingSection from './components/JobListing';
 import { Analytics } from "@vercel/analytics/react"
@@ -195,32 +194,23 @@ const KLJobs = () => {
     async (currentPage, currentSearchForm) => {
       setIsLoading(true);
       try {
-        const from = (currentPage - 1) * perPage;
-        const to = currentPage * perPage - 1;
+        const queryParams = new URLSearchParams({
+          page: currentPage,
+          role: currentSearchForm.role,
+          company: currentSearchForm.company,
+          location: currentSearchForm.location,
+        });
 
-        let queryBuilder = supabase.from("jobs").select("*");
-
-        if (currentSearchForm.role.trim()) {
-          queryBuilder = queryBuilder.or(
-            `role.ilike.%${currentSearchForm.role}%,company.ilike.%${currentSearchForm.role}%,tech_park.ilike.%${currentSearchForm.role}%`
-          );
+        // Use Vercel API route (works locally with 'vercel dev' or if pointing to deployed URL)
+        // For local development without 'vercel dev', you might need to hardcode localhost:3000
+        // But assuming relative path '/api/jobs' handles standard deployments.
+        const response = await fetch(`/api/jobs?${queryParams.toString()}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        if (currentSearchForm.company.trim()) {
-          queryBuilder = queryBuilder.or(
-            `company.ilike.%${currentSearchForm.company}%`
-          );
-        }
-
-        if (currentSearchForm.location.trim()) {
-          queryBuilder = queryBuilder.or(
-            `tech_park.ilike.%${currentSearchForm.location}%,company_profile.ilike.%${currentSearchForm.location}%`
-          );
-        }
-
-        const { data, error } = await queryBuilder.range(from, to);
-
-        if (error) throw error;
+        const data = await response.json();
 
         setJobs((prev) =>
           currentPage === 1 ? data || [] : [...prev, ...(data || [])]
