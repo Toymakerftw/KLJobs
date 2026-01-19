@@ -74,8 +74,10 @@ export default async function handler(req, res) {
           const term = role.trim().toLowerCase();
           jobs = jobs.filter(j =>
             (j.role && j.role.toLowerCase().includes(term)) ||
+            (j.job_title && j.job_title.toLowerCase().includes(term)) || // Search in cleaned title
             (j.company && j.company.toLowerCase().includes(term)) ||
-            (j.tech_park && j.tech_park.toLowerCase().includes(term))
+            (j.tech_park && j.tech_park.toLowerCase().includes(term)) ||
+            (j.skills && Array.isArray(j.skills) && j.skills.some(s => s.toLowerCase().includes(term))) // Search in skills
           );
         }
 
@@ -88,6 +90,8 @@ export default async function handler(req, res) {
           const term = location.trim().toLowerCase();
           jobs = jobs.filter(j =>
             (j.tech_park && j.tech_park.toLowerCase().includes(term)) ||
+            (j.clean_address && j.clean_address.toLowerCase().includes(term)) || // Search in cleaned address
+            (j.address && j.address.toLowerCase().includes(term)) ||
             (j.company_profile && j.company_profile.toLowerCase().includes(term))
           );
         }
@@ -96,17 +100,15 @@ export default async function handler(req, res) {
         const paginatedJobs = jobs.slice(offset, offset + limit);
 
         // --- Mapping to Frontend Expected Format ---
-        // The Python script stores a normalized object in Redis, but we ensure strict compatibility here.
         const processedRows = paginatedJobs.map(j => ({
           ...j,
-          // 'role' is already cleaned in Redis if applicable
+          role: j.job_title || j.role, // Prefer cleaned title
           description: j.clean_description || j.original_description || j.description,
-          // 'email' is at root, but prefer clean_email if available
           email: j.clean_email || j.email,
-          company_profile: j.job_summary || j.summary || j.company_profile, // Use summary for profile if available, matching MySQL logic
+          company_profile: j.job_summary || j.summary || j.company_profile,
           skills: j.skills || [],
           experience: j.experience_required || j.experience || null,
-          address: j.clean_address || null
+          address: j.clean_address || j.address || null // Prefer cleaned address
         }));
 
         return res.status(200).json(processedRows);
