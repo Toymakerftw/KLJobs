@@ -69,6 +69,30 @@ export default async function handler(req, res) {
       if (cachedData) {
         let jobs = JSON.parse(cachedData);
 
+        // --- Date Parsing Helper ---
+        const parseDate = (dateStr) => {
+          if (!dateStr || dateStr === 'N/A') return null;
+          // Attempt to parse "DD-MM-YYYY" or similar formats
+          // 1. Try DD-MM-YYYY
+          let parts = dateStr.match(/(\d{2})[\/-](\d{2})[\/-](\d{4})/);
+          if (parts) {
+            return new Date(`${parts[3]}-${parts[2]}-${parts[1]}`); // YYYY-MM-DD
+          }
+          // 2. Try standard Date.parse (e.g. "Oct 24, 2025")
+          const d = new Date(dateStr);
+          if (!isNaN(d.getTime())) return d;
+          return null;
+        };
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const isJobActive = (j) => {
+          const d = parseDate(j.deadline);
+          // Keep if date is invalid/N/A or if date is today or future
+          return !d || d >= today;
+        };
+
         // --- In-Memory Filtering ---
         if (role && role.trim()) {
           const term = role.trim().toLowerCase();
@@ -95,6 +119,9 @@ export default async function handler(req, res) {
             (j.company_profile && j.company_profile.toLowerCase().includes(term))
           );
         }
+
+        // --- Filter Expired Jobs ---
+        jobs = jobs.filter(isJobActive);
 
         // --- Pagination ---
         const paginatedJobs = jobs.slice(offset, offset + limit);
