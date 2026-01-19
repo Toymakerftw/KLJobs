@@ -8,6 +8,7 @@ import {
   Building,
   MapPin,
   ChevronUp,
+  X,
 } from "lucide-react";
 import debounce from "lodash.debounce";
 import JobListingSection from './components/JobListing';
@@ -59,6 +60,7 @@ const SearchBar = ({ onSearch }) => {
                 type="text"
                 placeholder="Search for jobs, companies, or tech parks..."
                 name="role"
+                aria-label="Search for jobs, companies, or tech parks"
                 value={searchForm.role}
                 onChange={handleInputChange}
                 className="block w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 bg-gray-50 focus:bg-white"
@@ -74,6 +76,7 @@ const SearchBar = ({ onSearch }) => {
                   type="text"
                   placeholder="Filter by company..."
                   name="company"
+                  aria-label="Filter by company"
                   value={searchForm.company}
                   onChange={handleInputChange}
                   disabled={!isExpanded}
@@ -88,6 +91,7 @@ const SearchBar = ({ onSearch }) => {
                   type="text"
                   placeholder="Filter by location..."
                   name="location"
+                  aria-label="Filter by location"
                   value={searchForm.location}
                   onChange={handleInputChange}
                   disabled={!isExpanded}
@@ -157,6 +161,7 @@ const KLJobs = () => {
     location: "",
   });
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const perPage = 9;
 
   useEffect(() => {
@@ -313,7 +318,49 @@ const KLJobs = () => {
               </button>
             </div>
 
-            <Menu className="sm:hidden text-blue-600 cursor-pointer" />
+            <button 
+              className="sm:hidden text-blue-600 cursor-pointer p-2"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle mobile menu"
+            >
+              {isMobileMenuOpen ? <X /> : <Menu />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        <div 
+          className={`sm:hidden bg-white border-b border-gray-100 transition-all duration-300 ease-in-out overflow-hidden ${
+            isMobileMenuOpen ? "max-h-96 opacity-100 shadow-md" : "max-h-0 opacity-0"
+          }`}
+        >
+          <div className="px-4 pt-2 pb-6 space-y-2">
+            <a
+              href="#"
+              className="block px-3 py-2 rounded-md text-base font-medium text-blue-600 bg-blue-50"
+            >
+              Find Jobs
+            </a>
+            <a
+              href="#"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+            >
+              For Employers
+            </a>
+            <a
+              href="#"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+            >
+              Pricing
+            </a>
+            <div className="pt-4 flex flex-col space-y-3">
+              <button className="w-full bg-white text-blue-600 border border-blue-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition-all duration-300">
+                Sign Up
+              </button>
+              <button className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 shadow-sm transition-all duration-300">
+                Login
+              </button>
+            </div>
           </div>
         </div>
       </nav>

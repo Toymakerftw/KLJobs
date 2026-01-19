@@ -8,6 +8,7 @@ import {
   Mail,
   X,
   Clock,
+  SearchX,
 } from 'lucide-react';
 
 const JobCard = ({ job }) => {
@@ -213,9 +214,15 @@ const JobListingSection = ({ jobs, isLoading, hasMore, loadMoreJobs }) => {
                   </div>
                 ))
               ) : (
-                <p className="text-center text-gray-500 mt-8 col-span-full">
-                  No jobs found matching your search criteria.
-                </p>
+                <div className="col-span-full flex flex-col items-center justify-center py-12 text-center animate-fadeIn">
+                  <div className="bg-blue-50 p-4 rounded-full mb-4">
+                    <SearchX className="w-8 h-8 text-blue-500" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">No jobs found</h3>
+                  <p className="text-gray-500 max-w-sm mx-auto">
+                    We couldn't find any jobs matching your current filters. Try adjusting your search criteria.
+                  </p>
+                </div>
               )}
             </>
           )}
